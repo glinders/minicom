@@ -36,6 +36,15 @@
 #define FILE_MWTR 1	/* main window top row */
 #define SUBM_OKAY 5	/* last entry in sub-menu */
 
+
+/* must be even */
+#define WINWIDTH76 (90)
+#define WINWIDTH75 ((WINWIDTH76)-1)
+#define WINWIDTH74 ((WINWIDTH76)-2)
+#define WINWIDTH73 ((WINWIDTH76)-3)
+#define WINWIDTH37 (((WINWIDTH76)-2)/2)
+
+
 static int nrents = 1;
 
 static void file_tell(const char *s);
@@ -58,7 +67,7 @@ static const char *const what[] =
     N_("[Okay]")
   };
 #define WHAT_NR_OPTIONS (sizeof (what) / sizeof (*what))
-#define WHAT_WIDTH 8 /* Width of one entry */
+#define WHAT_WIDTH 16//todo:test /* Width of one entry */
 /* Number of bytes for <= 7 characters */
 static int what_lens[WHAT_NR_OPTIONS];
 /* Number of ' ' padding entries at left and right, left is >= 1 */
@@ -98,8 +107,8 @@ static void horiz_draw(size_t k, char start_attr, char end_attr)
  */
 static void dhili(int k)
 {
-  int initial_y = (76 - (WHAT_NR_OPTIONS * WHAT_WIDTH >= 76
-	           ? 74 : WHAT_NR_OPTIONS * WHAT_WIDTH)) / 2;
+  int initial_y = (WINWIDTH76 - (WHAT_NR_OPTIONS * WHAT_WIDTH >= WINWIDTH76
+	           ? WINWIDTH74 : WHAT_NR_OPTIONS * WHAT_WIDTH)) / 2;
 
   if (k == dprev)
     return;
@@ -256,9 +265,9 @@ static int new_filedir(GETSDIR_ENTRY *dirdat, int flushit)
   static size_t dp_len = 0;
   static char cwd_str_fmt[BUFSIZ] = "";
   size_t new_dp_len, fmt_len;
-  char disp_dir[80];
-  int initial_y = (76 - (WHAT_NR_OPTIONS * WHAT_WIDTH >= 76
-                   ? 74 : WHAT_NR_OPTIONS * WHAT_WIDTH)) / 2;
+  char disp_dir[120];//todo:test:was 80
+  int initial_y = (WINWIDTH76 - (WHAT_NR_OPTIONS * WHAT_WIDTH >= WINWIDTH76
+                   ? WINWIDTH74 : WHAT_NR_OPTIONS * WHAT_WIDTH)) / 2;
   size_t i;
   char * new_prev_dir;
 
@@ -317,7 +326,7 @@ static int new_filedir(GETSDIR_ENTRY *dirdat, int flushit)
     /* Could not change to the new working directory */
     mc_wbell();
     werror(
-        _("Could not change to directory %s (%s)"), 
+        _("Could not change to directory %s (%s)"),
         work_dir,
         strerror(errno));
 
@@ -350,7 +359,7 @@ static int new_filedir(GETSDIR_ENTRY *dirdat, int flushit)
       if (how_many < 0)
         s = _("Select one or more files for upload");
       else if (how_many)
-	s = _("Select a file for upload");
+	s = _("Select a file for XXX upload");
       else
 	s = _("Select a directory for upload");
     }
@@ -364,12 +373,12 @@ static int new_filedir(GETSDIR_ENTRY *dirdat, int flushit)
              _("Directory: %%-%ds"), (int)dp_len);
   }
   new_dp_len = mbswidth(work_dir);
-  if (new_dp_len + (fmt_len = mbswidth(cwd_str_fmt)) > 75) {
+  if (new_dp_len + (fmt_len = mbswidth(cwd_str_fmt)) > WINWIDTH75) {
     size_t i;
     char *tmp_dir = work_dir;
 
-    /* We want the last 73 characters */
-    for (i = 0; 73 + i < new_dp_len + fmt_len; i++) {
+    /* We want the last WINWIDTH73 characters */
+    for (i = 0; WINWIDTH73 + i < new_dp_len + fmt_len; i++) {
       wchar_t wc;
 
       tmp_dir += one_mbtowc(&wc, work_dir, MB_LEN_MAX);
@@ -488,9 +497,9 @@ static void init_filedir(void)
   int x1, x2;
 
   dirflush = 0;
-  x1 = (COLS / 2) - 37;
-  x2 = (COLS / 2) + 37;
-  dsub = mc_wopen(x1 - 1, LINES - 3, x2 + 1, LINES - 3, BNONE, 
+  x1 = (COLS / 2) - WINWIDTH37;//todo:test:was 37
+  x2 = (COLS / 2) + WINWIDTH37;//todo:test:was 37
+  dsub = mc_wopen(x1 - 1, LINES - 3, x2 + 1, LINES - 3, BNONE,
                stdattr, mfcolor, mbcolor, 0, 0, 1);
   main_w = mc_wopen(x1, 2, x2, LINES - 6, BSINGLE, stdattr, mfcolor,
                  mbcolor, 0, 0, 1);
@@ -611,14 +620,14 @@ again:
     GETSDIR_ENTRY *d = getno(cur, global_dirdat);
     /*
        if(S_ISDIR(d->mode))
-       prone(main_w, d, longest, 0);	
+       prone(main_w, d, longest, 0);
        */
     switch (c = wxgetch()) {
       case K_UP:
       case 'k':
         /*
          if(S_ISDIR(d->mode))
-         prone(main_w, d, longest, 1);	
+         prone(main_w, d, longest, 1);
          */
         cur -= cur > 0;
         break;
@@ -806,7 +815,7 @@ again:
               goto tag_end;
             }
             tag_cnt += newly_tagged;
-            prdir(main_w, top, top, global_dirdat, longest);  
+            prdir(main_w, top, top, global_dirdat, longest);
           }
         }
 tag_end:
@@ -827,7 +836,7 @@ tag_end:
             goto untag_end;
           }
           tag_cnt -= untagged;
-          prdir(main_w, top, top, global_dirdat, longest);  
+          prdir(main_w, top, top, global_dirdat, longest);
         }
 untag_end:
         break;
@@ -848,7 +857,7 @@ untag_end:
                     /* ask 'em if they're *sure* */
                     char buf[BUFSIZ];
 
-                    snprintf(buf, sizeof(buf), 
+                    snprintf(buf, sizeof(buf),
                              _("File: \"%s\" exists! Overwrite?"), ret_buf);
                     if (ask(buf, d_yesno) == 0) {
                       ret_ptr = ret_buf;
