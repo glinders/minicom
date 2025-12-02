@@ -67,7 +67,7 @@ static const char *const what[] =
     N_("[Okay]")
   };
 #define WHAT_NR_OPTIONS (sizeof (what) / sizeof (*what))
-#define WHAT_WIDTH 16//todo:test /* Width of one entry */
+#define WHAT_WIDTH 8 /* Width of one entry */
 /* Number of bytes for <= 7 characters */
 static int what_lens[WHAT_NR_OPTIONS];
 /* Number of ' ' padding entries at left and right, left is >= 1 */
@@ -265,7 +265,7 @@ static int new_filedir(GETSDIR_ENTRY *dirdat, int flushit)
   static size_t dp_len = 0;
   static char cwd_str_fmt[BUFSIZ] = "";
   size_t new_dp_len, fmt_len;
-  char disp_dir[120];//todo:test:was 80
+  char disp_dir[WINWIDTH76+4];
   int initial_y = (WINWIDTH76 - (WHAT_NR_OPTIONS * WHAT_WIDTH >= WINWIDTH76
                    ? WINWIDTH74 : WHAT_NR_OPTIONS * WHAT_WIDTH)) / 2;
   size_t i;
@@ -497,8 +497,8 @@ static void init_filedir(void)
   int x1, x2;
 
   dirflush = 0;
-  x1 = (COLS / 2) - WINWIDTH37;//todo:test:was 37
-  x2 = (COLS / 2) + WINWIDTH37;//todo:test:was 37
+  x1 = (COLS / 2) - WINWIDTH37;
+  x2 = (COLS / 2) + WINWIDTH37;
   dsub = mc_wopen(x1 - 1, LINES - 3, x2 + 1, LINES - 3, BNONE,
                stdattr, mfcolor, mbcolor, 0, 0, 1);
   main_w = mc_wopen(x1, 2, x2, LINES - 6, BSINGLE, stdattr, mfcolor,
