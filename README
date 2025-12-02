@@ -28,7 +28,7 @@ is one available), look at https://salsa.debian.org/minicom-team/minicom.
 Current development version of minicom can be found here:
 https://salsa.debian.org/minicom-team/minicom
 
-To compile and install a development version:
+To compile and install a development version (1):
 1. git clone https://salsa.debian.org/minicom-team/minicom.git
 2. cd minicom
 3. ./autogen.sh
@@ -37,3 +37,7 @@ To compile and install a development version:
 6. make install
 
 adam@lackorzynski.de
+
+(1) Prerequisites for compiling and installing the development version on Ubuntu 24.04:
+- sudo apt install autoconf autopoint pkg-config automake make libncurses-dev
+- use 'sudo make install' instead of 'make install'
