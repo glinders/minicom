@@ -269,7 +269,6 @@ static int new_filedir(GETSDIR_ENTRY *dirdat, int flushit)
   int initial_y = (WINWIDTH76 - (WHAT_NR_OPTIONS * WHAT_WIDTH >= WINWIDTH76
                    ? WINWIDTH74 : WHAT_NR_OPTIONS * WHAT_WIDTH)) / 2;
   size_t i;
-  char * new_prev_dir;
 
   cur      =  0;
   ocur     =  0;
@@ -312,27 +311,58 @@ static int new_filedir(GETSDIR_ENTRY *dirdat, int flushit)
   if (strlen(work_dir) > 1 && work_dir[strlen(work_dir) - 1] == '/')
     work_dir[strlen(work_dir) - 1] = (char)0;
 
-  /* get the current working directory, which will become the prev_dir, on success */
-  new_prev_dir = getcwd(NULL, BUFSIZ);
-  if (!new_prev_dir)
-    return -1;
-
   if (!access(work_dir, R_OK | X_OK) && !chdir(work_dir)) {
-    /* was able to change to new working directory */
-    free(prev_dir);
-    prev_dir = new_prev_dir;
+    /* Successfully changed to the target directory.  Now capture the new CWD
+     * as prev_dir (used by the [Prev] button).  getcwd() after a successful
+     * chdir() will always succeed; we do it here rather than before the
+     * chdir() so that a stale/deleted process CWD (e.g. because mcd("")
+     * failed to restore after a previous upload into a tree that was then
+     * deleted by 'make clean') doesn't abort the picker before it opens. */
+    char *new_prev_dir = getcwd(NULL, BUFSIZ);
+    if (new_prev_dir) {
+      free(prev_dir);
+      prev_dir = new_prev_dir;
+    }
   }
   else {
-    /* Could not change to the new working directory */
-    mc_wbell();
-    werror(
-        _("Could not change to directory %s (%s)"),
-        work_dir,
-        strerror(errno));
+    /* Could not change to the cached working directory (e.g. it was deleted).
+     * Walk up the path, truncating at each '/', until we find an ancestor
+     * that still exists. This keeps the file picker as close as possible to
+     * the last-used location rather than jumping to the config default. */
+    {
+      char *sp;
+      int found = 0;
 
-    /* restore the previous working directory */
-    free(work_dir);
-    work_dir = set_work_dir(new_prev_dir, strlen(new_prev_dir));
+      /* Try successively shorter paths until one is accessible */
+      while ((sp = strrchr(work_dir, '/')) != NULL) {
+        /* Preserve "/" itself: only truncate when there is something after it */
+        if (sp == work_dir)
+          sp[1] = '\0'; /* collapse to "/" */
+        else
+          *sp = '\0';
+
+        if (!access(work_dir, R_OK | X_OK) && !chdir(work_dir)) {
+          found = 1;
+          break;
+        }
+
+        if (sp == work_dir) /* already at root, give up */
+          break;
+      }
+
+      if (!found) {
+        mc_wbell();
+        werror(_("Could not change to directory %s (%s)"),
+               work_dir, strerror(errno));
+        free(work_dir);
+        if (down_loading)
+          d_work_dir = NULL;
+        else
+          u_work_dir = NULL;
+        work_dir = NULL;
+        return -1;
+      }
+    }
   }
 
   /* Alright, draw the file directory! */
